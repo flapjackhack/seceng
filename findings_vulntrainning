@@ -1,0 +1,120 @@
+flag1======>[^FLAG^7F38C568520EB31B3FC3ACE87C7560DB^FLAG^](BROWSE TO c867fc3a.vulntraining.co.uk)
+flag2======>[^FLAG^A3F0AAED20D5E3C37F807D848B6EEA48^FLAG^](BROWSE TO http://vulntraining.co.uk/s3cr3T_d1r3ct0rY/)
+flag3======>[^FLAG^5325FA257F178D157DEF34246080098C^FLAG^](CAREFULLY LOOKING AT THE MAIN PAGE WE SAW A COOKIE IS OING WITH CTFCHALLENGE WE DECODED IT AN FOUND IT ASSEPNO-REDIRECT,REMOVE IT WILL FIND SOME AMZON S3 AND GO AHED)
+flag4======>[^FLAG^AB8DE736C07A33A87F437CD414140063^FLAG^](INTERCEPT THE 302 IN BURP TO /SERVER IN VULTRAINING.CO.UK)
+flag5======>[^FLAG^5F233E8A05F09CA99124A06E2C1FF21E^FLAG^](IN tHE SOURCE CODE OF VULNTRAINING.CO.UK)
+flag6======>[^FLAG^0DACF0DC38B6E3FFBA62FB91EA4CCC22^FLAG^] (THE FLAG WAS ON THE GITHUB RIGHT SIDE PANEL)
+flag7======>[^FLAG^83D5073A0634F73A277582D70A5BBAAA^FLAG^](loged into php-my-admi using github creds)
+flag8======>[^FLAG^740C7BA0F8FF37D40DB9988BA93B1FE5^FLAG^](After getting the username we bruteforced the password)
+flag9======>[^FLAG^C227926676998A771D9AE3780E5EF2BD^FLAG^](IN THE BIILLING AT/1 THERE WAS AN PARAMETER API WHICH IS VULNERABLE SSRF/SO WE PUT BURP COLBARATOR CLIENT AND GOT THE FLAG ALSO WE GOT A TOKEN)
+flag10=====>[^FLAG^F1B2DC8F3B9B98ACBD5A685BF59EA4E1^FLAG^](IN THE /ADMIN/USERS/1 HERE IDOR IS THERE)
+flag11=====>[^FLAG^9DD08077D1C89F35B632575FE2A109B2^FLAG^](SQL INJECTION AT http://admin.vulntraining.co.uk/admin/s3cr3t_m3ss4g3s?id=2)
+
+Scope(Obtained by amass amd dig txt domain name)
+========
+vulntraining.co.uk
+www.vulntraining.co.uk
+admin.vulntraining.co.uk
+billing.vulntraining.co.uk
+c867fc3a.vulntraining.co.uk
+
+
+
+
+
+Initial Analysis
+==============
+http://billing.vulntraining.co.uk/login is vulnerable to username enumeration
+admin.vulntraining.co.uk leads to 401
+c867fc3a.vulntraining.co.uk gives the 1st fag just bnrowse to it
+
+
+
+Analysis
+================
+1)vulntraining.co.uk
+
+we found a directory called server with response 302 but size more than 3000.It means it will redirect in the broswer but we can see the actual page in burp.
+Its redirecting to server login.We found the 4th flag by just intercepting this 302.
+
+directories found
+======================
+.git                    [Status: 403, Size: 170, Words: 5, Lines: 7]
+.git/HEAD               [Status: 200, Size: 23, Words: 2, Lines: 2]
+.git/config             [Status: 200, Size: 288, Words: 19, Lines: 12]
+.git/index              [Status: 200, Size: 1342, Words: 8, Lines: 7]
+css                     [Status: 301, Size: 194, Words: 7, Lines: 8]
+framework               [Status: 301, Size: 194, Words: 7, Lines: 8]
+js                      [Status: 301, Size: 194, Words: 7, Lines: 8]
+robots.txt              [Status: 200, Size: 42, Words: 3, Lines: 2]
+server 			[Status: 302, Size: 3263, Words: 1457, Lines: 109]
+
+
+from the robots.txt we found the secret directory and got the 2nd flag
+
+from .git we got a deleted file from where we got the db creds.
+
+From the intercepted 302 response we had a phpmyadmin login page
+
+From the intercpeted 302 response we got these
+=============================
+HTTP
+Software	NGINX
+Version	1.16.1
+Port(s)	80,443
+PHP
+Version	7.2.24
+Port(s)	/var/run/php/php7.2-fpm.sock
+MySQL
+Version	8.0
+Admin	http://vulntraining.co.uk/php-my-s3cret-admin
+==========================================================
+
+
+using the creds from github(vulntraining,#x7QE1Jg&cNO) we logged in to php-myadmin got the username as
+
+username=dominic.bryant
+
+we then bruteforce the password as it was clear from the initial analysis
+password=987654321
+
+
+2)billing.vulntraining.co.uk
+
+
+usermaes from billing
+===========================
+jake.vincent
+kayleigh.gough
+katherine.howarth
+lilly.miller
+miller.lilly
+howarth.katherine
+gough.kayleigh
+vincent.jake
+
+used these creds to login to billing.vulntraining.co.uk
+
+We got this header by EXPLOITING a ssrf flaw at /1?api=url in the billing.vulntrainning.co.uk
+
+billing.vulntraining.co.uk was using admin.vulntraining.co.uk as an api server in the backedn.
+We got the api parameter by bruteforing the paramter after /1
+we send request burp collabrator and found this
+
+X-Token: 71e8b37bdc4c8edbf197d42f7c5ab56a ======>imp header (by using this header we can now enumerate the api server i.e: admi.vulntraining.co.uk///we got this from the burp colabrator request)
+
+request id:e48c4dda6b9d2578c643c90abef6480
+
+
+
+Using this token we tried to access different endpoints in the api servr such as /admin,/admin/users/ but we got uswer donot have the permission to view
+So we fuzz the endpoint and found endpoint /admin/users/3 rerutns something
+
+So we exploited thiS IDOR and got the user with admin access.
+
+{"id":5,"username":"jon.helmstead","flag":"[^FLAG^F1B2DC8F3B9B98ACBD5A685BF59EA4E1^FLAG^]","apikey":"99663f8904af238fb1e3cedb2f8095f9","admin":true}
+
+
+uses his apikey as X-Token and got the admin access.
+
+WE then exploited a sql flaw in /admin/s3cr3t_m3ss4g3s?id=2 and got the last flag.
